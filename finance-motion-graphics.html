@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuipuCFO – Finance AI Readiness</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #0a0a14;
+      display: flex; justify-content: center; align-items: center;
+      overflow: hidden;
+    }
+    #wrap {
+      position: relative;
+      width: 100%;
+      max-width: min(100vw, calc(100vh * 16 / 9));
+      aspect-ratio: 16 / 9;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+    }
+    #controls {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 12px; align-items: center;
+    }
+    button {
+      background: #3d2a99; color: #fff; border: none;
+      padding: 7px 18px; border-radius: 20px;
+      cursor: pointer; font-size: 13px; font-family: sans-serif;
+      transition: background .2s;
+    }
+    button:hover { background: #5e42c8; }
+    #timeline {
+      width: 200px; height: 4px;
+      background: #333; border-radius: 2px; cursor: pointer;
+    }
+    #timeLabel { color: #aaa; font-size: 12px; font-family: monospace; min-width: 40px; }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="controls">
+    <button id="btnPlay">▶ Play</button>
+    <button id="btnRestart">↺ Restart</button>
+    <input type="range" id="timeline" min="0" max="16" step="0.05" value="0" />
+    <span id="timeLabel">0.0s</span>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────
+   QuipuCFO – Finance Motion Graphics
+   16:9 canvas animation  |  16 seconds total
+   ───────────────────────────────────────────── */
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+const W = 1920, H = 1080;
+canvas.width  = W;
+canvas.height = H;
+
+/* ── Palette ──────────────────────────────── */
+const C = {
+  bg      : '#2D1B69',
+  bgDark  : '#1a0f40',
+  white   : '#FFFFFF',
+  green   : '#00FF88',
+  greenDim: '#00cc6a',
+  red     : '#FF3B5C',
+  purple1 : '#5533CC',
+  purple2 : '#7c5ce3',
+  accent  : '#a78bfa',
+  gridLine: 'rgba(100,80,200,0.15)',
+};
+
+/* ── Math helpers ─────────────────────────── */
+const lerp  = (a, b, t) => a + (b - a) * t;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const ease  = t => t < .5 ? 2*t*t : -1+(4-2*t)*t;        // easeInOut
+const easeOut = t => 1 - (1-t)*(1-t);
+const easeIn  = t => t*t;
+
+/* ── Seeded RNG (deterministic) ───────────── */
+let seed = 42;
+function rand(lo=0, hi=1) {
+  seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+  const n = (seed >>> 0) / 0xffffffff;
+  return lo + n*(hi-lo);
+}
+function randReset() { seed = 42; }
+
+/* ── Font loader ──────────────────────────── */
+const fontURL = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap';
+const link = document.createElement('link');
+link.rel = 'stylesheet'; link.href = fontURL;
+document.head.appendChild(link);
+
+/* ═══════════════════════════════════════════
+   SCENE DATA  – all particle/element config
+   ═══════════════════════════════════════════ */
+
+/* Floating spreadsheet cells */
+randReset();
+const SHEETS = Array.from({length: 22}, (_, i) => ({
+  x : rand(80, W-80),
+  y : rand(80, H-80),
+  w : rand(130, 220),
+  h : rand(80, 130),
+  vx: rand(-18, 18),
+  vy: rand(-14, 14),
+  rot: rand(-0.4, 0.4),
+  vr: rand(-0.008, 0.008),
+  alpha: rand(0.55, 0.9),
+  rows: Math.floor(rand(3, 6)),
+  cols: Math.floor(rand(3, 6)),
+  redCell: rand() < 0.38,
+}));
+
+/* Floating "45%" icons */
+randReset();
+const ICONS45 = Array.from({length: 12}, (_, i) => ({
+  x : rand(100, W-100),
+  y : rand(100, H-100),
+  vx: rand(-22, 22),
+  vy: rand(-18, 18),
+  size: rand(34, 62),
+  alpha: rand(0.5, 0.85),
+  pulse: rand(0, Math.PI*2),
+}));
+
+/* Red warning labels */
+const LABELS = [
+  { text: 'Data Cleaning',         x: W*.18, y: H*.28 },
+  { text: 'Manual Reconciliation', x: W*.72, y: H*.22 },
+  { text: 'Data Cleaning',         x: W*.62, y: H*.74 },
+  { text: 'Manual Reconciliation', x: W*.15, y: H*.69 },
+  { text: 'Error: #REF!',          x: W*.48, y: H*.15 },
+  { text: 'Error: #REF!',          x: W*.82, y: H*.58 },
+];
+randReset();
+LABELS.forEach(l => {
+  l.vx = rand(-16, 16);
+  l.vy = rand(-12, 12);
+  l.rot = rand(-0.25, 0.25);
+});
+
+/* Roadmap nodes */
+const NODES = [
+  { label: 'Data Audit',        nx: 0.18, ny: 0.50 },
+  { label: 'AI Stack Mapping',  nx: 0.38, ny: 0.38 },
+  { label: 'Automation Layer',  nx: 0.58, ny: 0.50 },
+  { label: 'Scale & Optimize',  nx: 0.78, ny: 0.38 },
+  { label: 'Full AI Finance',   nx: 0.88, ny: 0.55 },
+];
+
+/* ═══════════════════════════════════════════
+   ANIMATION STATE
+   ═══════════════════════════════════════════ */
+let t      = 0;          // current time in seconds
+let lastTS = null;
+let playing = false;
+const DURATION = 16;
+
+/* ── CFO Silhouette path (abstract) ────────── */
+function drawCFO(cx, cy, scale, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+
+  // body gradient
+  const bg = ctx.createRadialGradient(0, -60, 10, 0, 0, 160);
+  bg.addColorStop(0, 'rgba(120,90,220,0.9)');
+  bg.addColorStop(1, 'rgba(45,27,105,0.0)');
+
+  // head
+  ctx.beginPath();
+  ctx.arc(0, -115, 38, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(180,160,255,0.85)';
+  ctx.fill();
+
+  // torso
+  ctx.beginPath();
+  ctx.moveTo(-55, -75);
+  ctx.bezierCurveTo(-65, 0, -50, 80, -45, 120);
+  ctx.lineTo(45, 120);
+  ctx.bezierCurveTo(50, 80, 65, 0, 55, -75);
+  ctx.closePath();
+  ctx.fillStyle = bg;
+  ctx.fill();
+
+  // left arm – slightly drooping under weight
+  ctx.beginPath();
+  ctx.moveTo(-52, -50);
+  ctx.bezierCurveTo(-100, -20, -130, 40, -110, 80);
+  ctx.lineWidth = 22;
+  ctx.strokeStyle = 'rgba(160,140,230,0.75)';
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // right arm
+  ctx.beginPath();
+  ctx.moveTo(52, -50);
+  ctx.bezierCurveTo(100, -20, 130, 40, 110, 80);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/* ── Spreadsheet cell ─────────────────────── */
+function drawSheet(s, progress) {
+  const { x, y, w, h, rot, alpha, rows, cols, redCell, vx, vy, vr } = s;
+  const px = x + vx * progress * 0.15;
+  const py = y + vy * progress * 0.15;
+  const pr = rot + vr * progress * 8;
+
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(pr);
+  ctx.globalAlpha = alpha;
+
+  // card background
+  ctx.beginPath();
+  ctx.roundRect(-w/2, -h/2, w, h, 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // grid lines
+  const cw = w / cols, rh = h / rows;
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.lineWidth = 0.7;
+  for (let c=1; c<cols; c++) {
+    ctx.beginPath();
+    ctx.moveTo(-w/2 + c*cw, -h/2);
+    ctx.lineTo(-w/2 + c*cw,  h/2);
+    ctx.stroke();
+  }
+  for (let r=1; r<rows; r++) {
+    ctx.beginPath();
+    ctx.moveTo(-w/2, -h/2 + r*rh);
+    ctx.lineTo( w/2, -h/2 + r*rh);
+    ctx.stroke();
+  }
+
+  // one red cell highlight
+  if (redCell) {
+    ctx.fillStyle = 'rgba(255,59,92,0.35)';
+    ctx.fillRect(-w/2, -h/2, cw, rh);
+  }
+
+  ctx.restore();
+}
+
+/* ── 45% icon ─────────────────────────────── */
+function draw45(ic, progress, t) {
+  const px = ic.x + ic.vx * progress * 0.12;
+  const py = ic.y + ic.vy * progress * 0.12;
+  const pulse = 0.8 + 0.2*Math.sin(t*3 + ic.pulse);
+
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.globalAlpha = ic.alpha * pulse;
+
+  const r = ic.size;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI*2);
+  ctx.strokeStyle = C.red;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  ctx.font = `bold ${r*0.7}px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = C.red;
+  ctx.fillText('45%', 0, 0);
+
+  ctx.restore();
+}
+
+/* ── Warning label ────────────────────────── */
+function drawLabel(lb, progress, alpha) {
+  const px = lb.x + lb.vx * progress * 0.10;
+  const py = lb.y + lb.vy * progress * 0.10;
+
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(lb.rot);
+  ctx.globalAlpha = alpha;
+
+  const fs = 20;
+  ctx.font = `bold ${fs}px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(lb.text).width;
+
+  ctx.beginPath();
+  ctx.roundRect(-tw/2-12, -fs/2-7, tw+24, fs+14, 4);
+  ctx.fillStyle = 'rgba(255,59,92,0.20)';
+  ctx.fill();
+  ctx.strokeStyle = C.red;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = C.red;
+  ctx.fillText(lb.text, 0, 0);
+
+  ctx.restore();
+}
+
+/* ── Kinetic BG typography ────────────────── */
+function drawKineticBG(alpha, t) {
+  const words = ['THE CAPACITY TRAP'];
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.08;
+  ctx.font = `900 ${W*0.12}px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = C.white;
+
+  const scale = 1 + 0.015*Math.sin(t*0.7);
+  ctx.translate(W/2, H/2);
+  ctx.scale(scale, scale);
+  ctx.fillText('THE CAPACITY TRAP', 0, 0);
+
+  ctx.restore();
+}
+
+/* ── Pressure gauge ───────────────────────── */
+function drawPressureGauge(cx, cy, r, fill, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy);
+
+  // track
+  ctx.beginPath();
+  ctx.arc(0, 0, r, Math.PI*0.75, Math.PI*2.25);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // fill arc – color shifts red as it fills
+  const red   = Math.floor(lerp(60, 255, fill));
+  const green = Math.floor(lerp(200, 59, fill));
+  const end   = Math.PI*0.75 + fill * Math.PI*1.5;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, Math.PI*0.75, end);
+  ctx.strokeStyle = `rgb(${red},${green},80)`;
+  ctx.lineWidth = 8;
+  ctx.stroke();
+
+  // needle
+  const angle = Math.PI*0.75 + fill * Math.PI*1.5 - Math.PI/2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(Math.cos(angle)*(r-10), Math.sin(angle)*(r-10));
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // label
+  ctx.font = `bold 22px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff';
+  ctx.fillText('PRESSURE', 0, r+20);
+
+  ctx.restore();
+}
+
+/* ── Ticking clock ───────────────────────── */
+function drawClock(cx, cy, r, t, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy);
+
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // tick marks
+  for (let i=0; i<12; i++) {
+    const a = (i/12)*Math.PI*2 - Math.PI/2;
+    const inner = i%3===0 ? r-10 : r-6;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*inner, Math.sin(a)*inner);
+    ctx.lineTo(Math.cos(a)*(r-2), Math.sin(a)*(r-2));
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = i%3===0 ? 2 : 1;
+    ctx.stroke();
+  }
+
+  // minute hand (fast for urgency)
+  const mAngle = (t*2) * Math.PI*2 - Math.PI/2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(Math.cos(mAngle)*(r-12), Math.sin(mAngle)*(r-12));
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // hour hand
+  const hAngle = (t*0.2) * Math.PI*2 - Math.PI/2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(Math.cos(hAngle)*(r-22), Math.sin(hAngle)*(r-22));
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // center dot
+  ctx.beginPath();
+  ctx.arc(0, 0, 4, 0, Math.PI*2);
+  ctx.fillStyle = C.red;
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/* ── Subtitle / overlay text ─────────────── */
+function drawSubtitle(lines, alpha, highlightLast=false) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  const lineH = 56;
+  const totalH = lines.length * lineH;
+  let startY = H * 0.80 - totalH / 2;
+
+  lines.forEach((line, i) => {
+    const isLast = i === lines.length-1;
+    const fs = isLast && highlightLast ? 42 : 36;
+    ctx.font = `bold ${fs}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (isLast && highlightLast) {
+      ctx.fillStyle = C.green;
+    } else {
+      ctx.fillStyle = C.white;
+    }
+    ctx.fillText(line, W/2, startY + i*lineH);
+  });
+
+  ctx.restore();
+}
+
+/* ── Roadmap line + nodes ─────────────────── */
+function drawRoadmap(progress, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  const pts = NODES.map(n => ({ x: n.nx*W, y: n.ny*H }));
+
+  // draw connecting line segment by segment
+  for (let i=0; i<pts.length-1; i++) {
+    const segStart = i / (pts.length-1);
+    const segEnd   = (i+1) / (pts.length-1);
+    const segP = clamp((progress - segStart) / (segEnd - segStart), 0, 1);
+    if (segP <= 0) break;
+
+    const x2 = lerp(pts[i].x, pts[i+1].x, segP);
+    const y2 = lerp(pts[i].y, pts[i+1].y, segP);
+
+    // glow
+    ctx.beginPath();
+    ctx.moveTo(pts[i].x, pts[i].y);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = 'rgba(0,255,136,0.12)';
+    ctx.lineWidth = 18;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(pts[i].x, pts[i].y);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = C.green;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  // draw nodes
+  pts.forEach((p, i) => {
+    const nodeProgress = i / (pts.length-1);
+    const nodeAlpha = clamp((progress - nodeProgress + 0.1) / 0.12, 0, 1);
+    if (nodeAlpha <= 0) return;
+
+    ctx.globalAlpha = alpha * nodeAlpha;
+
+    // outer glow
+    const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 40);
+    glow.addColorStop(0, 'rgba(0,255,136,0.3)');
+    glow.addColorStop(1, 'rgba(0,255,136,0.0)');
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 40, 0, Math.PI*2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    // node circle
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 14, 0, Math.PI*2);
+    ctx.fillStyle = C.green;
+    ctx.fill();
+    ctx.strokeStyle = C.white;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // label
+    ctx.font = 'bold 20px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = C.white;
+    ctx.fillText(NODES[i].label, p.x, p.y + 22);
+  });
+
+  ctx.restore();
+}
+
+/* ── CTA button ───────────────────────────── */
+function drawCTA(alpha, t) {
+  if (alpha <= 0) return;
+  const pulse = 1 + 0.03*Math.sin(t*4);
+  const bw = 700, bh = 80, bx = W/2 - bw/2, by = H*0.78 - bh/2;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(W/2, H*0.78);
+  ctx.scale(pulse, pulse);
+  ctx.translate(-W/2, -H*0.78);
+
+  // glow
+  const glow = ctx.createRadialGradient(W/2, H*0.78, 0, W/2, H*0.78, 200);
+  glow.addColorStop(0, 'rgba(0,255,136,0.18)');
+  glow.addColorStop(1, 'rgba(0,255,136,0.0)');
+  ctx.beginPath();
+  ctx.arc(W/2, H*0.78, 200, 0, Math.PI*2);
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  // button pill
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, 40);
+  ctx.fillStyle = C.green;
+  ctx.fill();
+
+  // text
+  ctx.font = 'bold 28px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#0a0a14';
+  ctx.fillText('Get your Roadmap  →  Take the Finance AI Readiness Assessment', W/2, H*0.78);
+
+  ctx.restore();
+}
+
+/* ── "WHERE DO YOU START?" glowing box ────── */
+function drawStartBox(alpha, t) {
+  if (alpha <= 0) return;
+  const glow = 0.7 + 0.3*Math.sin(t*2.5);
+  const bw = 620, bh = 110, cx = W/2, cy = H*0.46;
+  const bx = cx - bw/2, by = cy - bh/2;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // outer glow
+  ctx.shadowColor = C.green;
+  ctx.shadowBlur  = 40 * glow;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, 10);
+  ctx.strokeStyle = C.green;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.font = 'bold 52px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = C.green;
+  ctx.shadowBlur  = 20 * glow;
+  ctx.fillStyle = C.green;
+  ctx.fillText('WHERE DO YOU START?', cx, cy);
+
+  ctx.restore();
+}
+
+/* ── Grid / scanlines ─────────────────────── */
+function drawGrid(alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = C.gridLine;
+  ctx.lineWidth = 1;
+  const step = 80;
+  for (let x=0; x<W; x+=step) {
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+  for (let y=0; y<H; y+=step) {
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ── Vignette ─────────────────────────────── */
+function drawVignette() {
+  const g = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.85);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(10,6,30,0.7)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+/* ── Particle dust ───────────────────────── */
+randReset();
+const DUST = Array.from({length: 60}, () => ({
+  x: rand(0, W), y: rand(0, H),
+  r: rand(1, 3.5),
+  vx: rand(-0.3, 0.3), vy: rand(-0.5, -0.1),
+  alpha: rand(0.1, 0.4),
+  phase: rand(0, Math.PI*2),
+}));
+function drawDust(t, masterAlpha) {
+  ctx.save();
+  DUST.forEach(d => {
+    const a = masterAlpha * d.alpha * (0.6 + 0.4*Math.sin(t*1.2 + d.phase));
+    ctx.globalAlpha = a;
+    ctx.beginPath();
+    ctx.arc(
+      (d.x + d.vx*t*20) % W,
+      ((d.y + d.vy*t*20) % H + H) % H,
+      d.r, 0, Math.PI*2
+    );
+    ctx.fillStyle = C.accent;
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════
+   MAIN RENDER
+   ═══════════════════════════════════════════ */
+function render(time) {
+  const T = clamp(time, 0, DURATION);
+
+  // ── Background ────────────────────────────
+  const urgencyMix = clamp((T - 3) / 4, 0, 1) * clamp((8-T)/2, 0, 1);
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  const bgR = Math.floor(lerp(45, 70, urgencyMix));
+  const bgG = Math.floor(lerp(27, 15, urgencyMix));
+  bg.addColorStop(0, `rgb(${bgR},${bgG},105)`);
+  bg.addColorStop(1, `rgb(15,8,40)`);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawGrid(0.6);
+
+  // ── Phase alphas ──────────────────────────
+  // SH01: 0-8s (chaos phase)
+  const chaosAlpha   = clamp(T/0.8, 0, 1) * clamp((9-T)/1.0, 0, 1);
+  // SH02: 8-16s (solution phase)
+  const solveAlpha   = easeOut(clamp((T-8)/1.5, 0, 1));
+  const roadmapP     = clamp((T-8.5)/4.5, 0, 1);
+  const ctaAlpha     = easeOut(clamp((T-13)/1.2, 0, 1));
+  const startBoxA    = easeOut(clamp((T-10)/1.5, 0, 1)) * clamp((T-10)/1, 0, 1);
+  const pressureAlpha= clamp((T-4)/1.0, 0, 1) * clamp((8.5-T)/0.8, 0, 1);
+  const clockAlpha   = clamp((T-3.5)/1.0, 0, 1) * clamp((8.5-T)/0.8, 0, 1);
+
+  // Kinetic BG text
+  drawKineticBG(chaosAlpha, T);
+
+  // Dust particles
+  drawDust(T, 0.8);
+
+  // ── CHAOS ELEMENTS (SH01) ─────────────────
+  if (chaosAlpha > 0) {
+    const chaosProgress = clamp(T/8, 0, 1);
+    SHEETS.forEach(s => drawSheet(s, chaosProgress));
+    ICONS45.forEach(ic => draw45(ic, chaosProgress, T));
+    LABELS.forEach(lb => drawLabel(lb, chaosProgress, chaosAlpha * 0.9));
+  }
+
+  // Pressure gauge (appears ~4s)
+  if (pressureAlpha > 0) {
+    const gaugeVal = clamp((T-4)/3.5, 0, 1);
+    drawPressureGauge(W*0.85, H*0.28, 70, gaugeVal, pressureAlpha);
+  }
+
+  // Clock (appears ~3.5s)
+  if (clockAlpha > 0) {
+    drawClock(W*0.14, H*0.25, 55, T, clockAlpha);
+  }
+
+  // ── CFO SILHOUETTE ───────────────────────
+  const cfoScale  = lerp(1.0, 0.65, solveAlpha);
+  const cfoAlpha  = lerp(chaosAlpha > 0 ? 0.85 : 0, 0, clamp((T-9.5)/2, 0, 1));
+  const cfoY      = H*0.5 + Math.sin(T*0.4)*6;
+  if (cfoAlpha > 0.02) {
+    drawCFO(W/2, cfoY, cfoScale, cfoAlpha);
+  }
+
+  // ── SOLUTION ELEMENTS (SH02) ──────────────
+  if (solveAlpha > 0) {
+    drawRoadmap(roadmapP, solveAlpha);
+    drawStartBox(startBoxA * solveAlpha, T);
+    drawCTA(ctaAlpha, T);
+  }
+
+  // ── TEXT OVERLAYS ─────────────────────────
+  // 0-4s
+  const text1A = clamp(T/0.6, 0, 1) * clamp((4.2-T)/0.6, 0, 1);
+  drawSubtitle(['Still spending 45% of your time cleaning data?'], text1A);
+
+  // 4-8s
+  const text2A = clamp((T-4)/0.6, 0, 1) * clamp((8.2-T)/0.6, 0, 1);
+  drawSubtitle([
+    'The Pressure is Real.',
+    '72% of CFOs say AI is critical...',
+    'but only 10% have scaled.',
+  ], text2A);
+
+  // 8-12s
+  const text3A = clamp((T-8)/0.5, 0, 1) * clamp((12.5-T)/0.5, 0, 1);
+  drawSubtitle(['Stop the Paradox.', 'Build your foundation.'], text3A);
+
+  // 13-16s (only CTA button text, already in drawCTA)
+
+  drawVignette();
+
+  // ── QuipuCFO logo watermark ───────────────
+  ctx.save();
+  ctx.globalAlpha = 0.45;
+  ctx.font = 'bold 26px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle = C.accent;
+  ctx.fillText('QuipuCFO', 36, H-30);
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATION LOOP
+   ═══════════════════════════════════════════ */
+let rafId = null;
+
+function loop(ts) {
+  if (!playing) return;
+  if (lastTS === null) lastTS = ts;
+  const dt = (ts - lastTS) / 1000;
+  lastTS = ts;
+  t = Math.min(t + dt, DURATION);
+  render(t);
+  updateControls();
+  if (t < DURATION) {
+    rafId = requestAnimationFrame(loop);
+  } else {
+    playing = false;
+    document.getElementById('btnPlay').textContent = '▶ Play';
+  }
+}
+
+/* ── Controls ──────────────────────────────── */
+const btnPlay    = document.getElementById('btnPlay');
+const btnRestart = document.getElementById('btnRestart');
+const timeline   = document.getElementById('timeline');
+const timeLabel  = document.getElementById('timeLabel');
+
+function updateControls() {
+  timeline.value = t;
+  timeLabel.textContent = t.toFixed(1)+'s';
+}
+
+btnPlay.addEventListener('click', () => {
+  if (playing) {
+    playing = false;
+    lastTS  = null;
+    btnPlay.textContent = '▶ Play';
+  } else {
+    if (t >= DURATION) t = 0;
+    playing = true;
+    lastTS  = null;
+    btnPlay.textContent = '⏸ Pause';
+    rafId   = requestAnimationFrame(loop);
+  }
+});
+
+btnRestart.addEventListener('click', () => {
+  playing = false;
+  lastTS  = null;
+  t = 0;
+  btnPlay.textContent = '▶ Play';
+  render(0);
+  updateControls();
+});
+
+timeline.addEventListener('input', () => {
+  t = parseFloat(timeline.value);
+  timeLabel.textContent = t.toFixed(1)+'s';
+  render(t);
+});
+
+// Initial frame
+render(0);
+</script>
+</body>
+</html>
