@@ -300,14 +300,21 @@ function drawCFO(cx, cy, scale, alpha) {
   ctx.restore();
 }
 
-/* ── "Meet James" name card ───────────────── */
+/* ── Character name card (Moss stresstimonials style) ── */
 function drawNameCard(alpha) {
   if (alpha <= 0) return;
-  const cx = W/2, cy = H*0.72;
-  const bw = 520, bh = 88, bx = cx - bw/2, by = cy - bh/2;
+  const cx = W/2, cy = H*0.73;
+  const bw = 560, bh = 88, bx = cx - bw/2, by = cy - bh/2;
 
   ctx.save();
   ctx.globalAlpha = alpha;
+
+  // ── tagline above the card
+  ctx.font = 'italic 400 22px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(255,255,255,0.70)';
+  ctx.fillText('When the month-end close takes 3 weeks\u2026', cx, cy - bh/2 - 22);
 
   // card background
   ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 14);
@@ -317,17 +324,17 @@ function drawNameCard(alpha) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // name
+  // name + age
   ctx.font = 'bold 30px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = C.gold;
-  ctx.fillText('Meet James', cx, cy - 18);
+  ctx.fillText('Meet Sandra, 43', cx, cy - 18);
 
-  // title
+  // job title
   ctx.font = '400 21px Inter, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.88)';
-  ctx.fillText("Financial \u201chindsight\u201d controller", cx, cy + 18);
+  ctx.fillText('VP of Eternal Close', cx, cy + 18);
 
   ctx.restore();
 }
