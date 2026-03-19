@@ -65,6 +65,10 @@
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 
+/* ── Sandra stock photo ── */
+const sandraImg = new Image();
+sandraImg.src = 'sandra.jpg';
+
 const W = 1920, H = 1080;
 canvas.width  = W;
 canvas.height = H;
@@ -170,179 +174,30 @@ let lastTS = null;
 let playing = false;
 const DURATION = 16;
 
-/* ── Sandra – flat-illustration female character ── */
+/* ── Sandra – stock photo ── */
 function drawCFO(cx, cy, scale, alpha) {
+  if (!sandraImg.complete || sandraImg.naturalWidth === 0) return;
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.translate(cx, cy);
-  ctx.scale(scale, scale);
 
-  const SKIN   = '#f0c090';
-  const SKIN_D = '#d4956a';
-  const HAIR   = '#3b1f0a';   // dark chestnut brown
-  const JACKET = '#1e2d5a';   // navy blazer
-  const BLOUSE = '#e8d5f5';   // soft lavender blouse (no tie)
+  const photoH = 420 * scale;
+  const photoW = sandraImg.naturalWidth / sandraImg.naturalHeight * photoH;
+  const px = cx - photoW / 2;
+  const py = cy - photoH * 0.82;
 
-  // ── Floor shadow
-  const shadowG = ctx.createRadialGradient(0, 148, 0, 0, 148, 80);
-  shadowG.addColorStop(0, 'rgba(0,0,0,0.20)');
+  // Floor shadow
+  const shadowG = ctx.createRadialGradient(cx, cy + photoH * 0.18, 0, cx, cy + photoH * 0.18, photoW * 0.55);
+  shadowG.addColorStop(0, 'rgba(0,0,0,0.22)');
   shadowG.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.beginPath(); ctx.ellipse(0, 148, 70, 14, 0, 0, Math.PI*2);
+  ctx.beginPath(); ctx.ellipse(cx, cy + photoH * 0.18, photoW * 0.52, photoH * 0.07, 0, 0, Math.PI * 2);
   ctx.fillStyle = shadowG; ctx.fill();
 
-  // ── Skirt (A-line, dark navy, slightly wider than jacket)
-  ctx.fillStyle = JACKET;
+  // Draw photo clipped to rounded rect
+  const rx = 18 * scale;
   ctx.beginPath();
-  ctx.moveTo(-46, 78);
-  ctx.bezierCurveTo(-54, 100, -62, 130, -58, 155);
-  ctx.lineTo(58, 155);
-  ctx.bezierCurveTo(62, 130, 54, 100, 46, 78);
-  ctx.closePath(); ctx.fill();
-
-  // ── Legs / tights (dark, below skirt hem)
-  ctx.fillStyle = '#111827';
-  ctx.beginPath(); ctx.roundRect(-28, 148, 22, 18, 4); ctx.fill();
-  ctx.beginPath(); ctx.roundRect(6, 148, 22, 18, 4); ctx.fill();
-
-  // ── Shoes (small heels)
-  ctx.fillStyle = '#1a0a0a';
-  ctx.beginPath(); ctx.ellipse(-17, 166, 18, 7, 0.05, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(17, 166, 18, 7, -0.05, 0, Math.PI*2); ctx.fill();
-  // heel detail
-  ctx.fillStyle = '#2a1010';
-  ctx.beginPath(); ctx.roundRect(-10, 162, 4, 10, 2); ctx.fill();
-  ctx.beginPath(); ctx.roundRect(6, 162, 4, 10, 2); ctx.fill();
-
-  // ── Body / blazer
-  ctx.fillStyle = JACKET;
-  ctx.beginPath();
-  ctx.moveTo(-50, -68);
-  ctx.bezierCurveTo(-58, 2, -48, 60, -44, 80);
-  ctx.lineTo(44, 80);
-  ctx.bezierCurveTo(48, 60, 58, 2, 50, -68);
-  ctx.closePath(); ctx.fill();
-
-  // ── Blouse visible at centre (no tie)
-  ctx.fillStyle = BLOUSE;
-  ctx.beginPath();
-  ctx.moveTo(-12, -66); ctx.lineTo(-6, 80); ctx.lineTo(6, 80); ctx.lineTo(12, -66);
-  ctx.closePath(); ctx.fill();
-
-  // ── Blazer lapels
-  ctx.fillStyle = JACKET;
-  ctx.beginPath();
-  ctx.moveTo(-12, -66); ctx.lineTo(-34, -46); ctx.lineTo(-26, 8); ctx.lineTo(-7, -6);
-  ctx.closePath(); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(12, -66); ctx.lineTo(34, -46); ctx.lineTo(26, 8); ctx.lineTo(7, -6);
-  ctx.closePath(); ctx.fill();
-
-  // ── Arms (slightly slimmer than male)
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = JACKET; ctx.lineWidth = 22;
-  // left arm – one hand raised near face (stressed, exasperated gesture)
-  ctx.beginPath();
-  ctx.moveTo(-46, -52); ctx.bezierCurveTo(-80, -30, -90, 10, -78, 58);
-  ctx.stroke();
-  // right arm – down at side
-  ctx.beginPath();
-  ctx.moveTo(46, -52); ctx.bezierCurveTo(82, -24, 96, 20, 86, 64);
-  ctx.stroke();
-
-  // ── Cuffs + hands
-  ctx.fillStyle = BLOUSE;
-  ctx.beginPath(); ctx.ellipse(-78, 60, 13, 8, -0.2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(86, 66, 13, 8, 0.2, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = SKIN;
-  ctx.beginPath(); ctx.ellipse(-78, 66, 12, 10, -0.2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(86, 72, 12, 10, 0.2, 0, Math.PI*2); ctx.fill();
-
-  // ── Neck
-  ctx.fillStyle = SKIN;
-  ctx.beginPath(); ctx.roundRect(-12, -90, 24, 28, 4); ctx.fill();
-
-  // ── Head (slightly rounder / softer)
-  ctx.fillStyle = SKIN;
-  ctx.beginPath(); ctx.ellipse(0, -128, 42, 50, 0, 0, Math.PI*2); ctx.fill();
-
-  // ── Ears (partially hidden by hair)
-  ctx.fillStyle = SKIN_D;
-  ctx.beginPath(); ctx.ellipse(-41, -128, 7, 11, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(41, -128, 7, 11, 0, 0, Math.PI*2); ctx.fill();
-
-  // ── Hair – long, flowing past shoulders (drawn in layers)
-  // back/side volume – drawn BEFORE face so it sits behind
-  ctx.fillStyle = HAIR;
-  // left flow
-  ctx.beginPath();
-  ctx.moveTo(-42, -158);
-  ctx.bezierCurveTo(-68, -120, -72, -60, -62, 20);
-  ctx.bezierCurveTo(-52, 50, -48, 60, -46, 80);
-  ctx.lineTo(-38, 80);
-  ctx.bezierCurveTo(-40, 60, -44, 40, -46, -10);
-  ctx.bezierCurveTo(-50, -70, -42, -120, -28, -158);
-  ctx.closePath(); ctx.fill();
-  // right flow
-  ctx.beginPath();
-  ctx.moveTo(42, -158);
-  ctx.bezierCurveTo(68, -120, 72, -60, 62, 20);
-  ctx.bezierCurveTo(52, 50, 48, 60, 46, 80);
-  ctx.lineTo(38, 80);
-  ctx.bezierCurveTo(40, 60, 44, 40, 46, -10);
-  ctx.bezierCurveTo(50, -70, 42, -120, 28, -158);
-  ctx.closePath(); ctx.fill();
-  // top of head
-  ctx.beginPath(); ctx.ellipse(0, -160, 38, 22, 0, 0, Math.PI); ctx.fill();
-  // centre parting area / top layer
-  ctx.beginPath();
-  ctx.moveTo(-20, -178);
-  ctx.bezierCurveTo(-10, -182, 10, -182, 20, -178);
-  ctx.bezierCurveTo(36, -168, 42, -148, 38, -128);
-  ctx.lineTo(-38, -128);
-  ctx.bezierCurveTo(-42, -148, -36, -168, -20, -178);
-  ctx.closePath(); ctx.fill();
-  // soft highlight strand
-  ctx.strokeStyle = '#5c3318'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-8, -178); ctx.bezierCurveTo(-14, -150, -18, -120, -20, -90);
-  ctx.stroke();
-
-  // ── Eyebrows (worried – inner corners raised, arched)
-  ctx.strokeStyle = HAIR; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-26, -150); ctx.quadraticCurveTo(-17, -158, -8, -152); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(26, -150); ctx.quadraticCurveTo(17, -158, 8, -152); ctx.stroke();
-
-  // ── Eyes (slightly larger, with lashes suggested by thicker top lid)
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.ellipse(-15, -132, 11, 8, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(15, -132, 11, 8, 0, 0, Math.PI*2); ctx.fill();
-  // iris – warm brown
-  ctx.fillStyle = '#5a3820';
-  ctx.beginPath(); ctx.arc(-15, -132, 6, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(15, -132, 6, 0, Math.PI*2); ctx.fill();
-  // pupil
-  ctx.fillStyle = '#111';
-  ctx.beginPath(); ctx.arc(-15, -132, 3.2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(15, -132, 3.2, 0, Math.PI*2); ctx.fill();
-  // shine
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(-12, -135, 1.8, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(18, -135, 1.8, 0, Math.PI*2); ctx.fill();
-  // upper lash line
-  ctx.strokeStyle = '#2c1a0e'; ctx.lineWidth = 2.5;
-  ctx.beginPath(); ctx.moveTo(-26, -137); ctx.quadraticCurveTo(-15, -141, -4, -137); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(4, -137); ctx.quadraticCurveTo(15, -141, 26, -137); ctx.stroke();
-
-  // ── Nose (soft, small)
-  ctx.strokeStyle = SKIN_D; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-  ctx.beginPath(); ctx.moveTo(0, -122); ctx.quadraticCurveTo(5, -116, 2, -112); ctx.stroke();
-
-  // ── Mouth (tight stressed line, slight downturn)
-  ctx.strokeStyle = '#b07050'; ctx.lineWidth = 2.8;
-  ctx.beginPath(); ctx.moveTo(-12, -103); ctx.quadraticCurveTo(0, -99, 12, -103); ctx.stroke();
-  // lower lip hint
-  ctx.strokeStyle = SKIN_D; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(-8, -101); ctx.quadraticCurveTo(0, -97, 8, -101); ctx.stroke();
+  ctx.roundRect(px, py, photoW, photoH, rx);
+  ctx.clip();
+  ctx.drawImage(sandraImg, px, py, photoW, photoH);
 
   ctx.restore();
 }
