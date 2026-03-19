@@ -8,7 +8,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       width: 100%; height: 100%;
-      background: #0a0a14;
+      background: #1a0840;
       display: flex; justify-content: center; align-items: center;
       overflow: hidden;
     }
@@ -32,12 +32,12 @@
       display: flex; gap: 12px; align-items: center;
     }
     button {
-      background: #3d2a99; color: #fff; border: none;
+      background: #ffffff; color: #6B21E8; border: none;
       padding: 7px 18px; border-radius: 20px;
-      cursor: pointer; font-size: 13px; font-family: sans-serif;
+      cursor: pointer; font-size: 13px; font-family: sans-serif; font-weight: 700;
       transition: background .2s;
     }
-    button:hover { background: #5e42c8; }
+    button:hover { background: #f0e8ff; }
     #timeline {
       width: 200px; height: 4px;
       background: #333; border-radius: 2px; cursor: pointer;
@@ -71,16 +71,16 @@ canvas.height = H;
 
 /* ── Palette ──────────────────────────────── */
 const C = {
-  bg      : '#2D1B69',
-  bgDark  : '#1a0f40',
+  bg      : '#6B21E8',   // QuipuCFO vivid purple
+  bgDark  : '#3D1280',   // deep purple for gradient base
   white   : '#FFFFFF',
-  green   : '#00FF88',
-  greenDim: '#00cc6a',
+  gold    : '#F5A623',   // QuipuCFO golden yellow accent (stats, highlights)
+  goldDim : '#C4821A',
   red     : '#FF3B5C',
-  purple1 : '#5533CC',
-  purple2 : '#7c5ce3',
-  accent  : '#a78bfa',
-  gridLine: 'rgba(100,80,200,0.15)',
+  purple1 : '#8B5CF6',   // lighter purple for glows
+  purple2 : '#A78BFA',
+  accent  : '#D4AAFF',   // soft lavender for dust / grid
+  gridLine: 'rgba(255,255,255,0.08)',
 };
 
 /* ── Math helpers ─────────────────────────── */
@@ -180,8 +180,8 @@ function drawCFO(cx, cy, scale, alpha) {
 
   // body gradient
   const bg = ctx.createRadialGradient(0, -60, 10, 0, 0, 160);
-  bg.addColorStop(0, 'rgba(120,90,220,0.9)');
-  bg.addColorStop(1, 'rgba(45,27,105,0.0)');
+  bg.addColorStop(0, 'rgba(180,140,255,0.9)');
+  bg.addColorStop(1, 'rgba(107,33,232,0.0)');
 
   // head
   ctx.beginPath();
@@ -450,7 +450,7 @@ function drawSubtitle(lines, alpha, highlightLast=false) {
     ctx.textBaseline = 'middle';
 
     if (isLast && highlightLast) {
-      ctx.fillStyle = C.green;
+      ctx.fillStyle = C.gold;
     } else {
       ctx.fillStyle = C.white;
     }
@@ -482,7 +482,7 @@ function drawRoadmap(progress, alpha) {
     ctx.beginPath();
     ctx.moveTo(pts[i].x, pts[i].y);
     ctx.lineTo(x2, y2);
-    ctx.strokeStyle = 'rgba(0,255,136,0.12)';
+    ctx.strokeStyle = 'rgba(245,166,35,0.15)';
     ctx.lineWidth = 18;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -490,7 +490,7 @@ function drawRoadmap(progress, alpha) {
     ctx.beginPath();
     ctx.moveTo(pts[i].x, pts[i].y);
     ctx.lineTo(x2, y2);
-    ctx.strokeStyle = C.green;
+    ctx.strokeStyle = C.gold;
     ctx.lineWidth = 3;
     ctx.stroke();
   }
@@ -505,8 +505,8 @@ function drawRoadmap(progress, alpha) {
 
     // outer glow
     const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 40);
-    glow.addColorStop(0, 'rgba(0,255,136,0.3)');
-    glow.addColorStop(1, 'rgba(0,255,136,0.0)');
+    glow.addColorStop(0, 'rgba(245,166,35,0.35)');
+    glow.addColorStop(1, 'rgba(245,166,35,0.0)');
     ctx.beginPath();
     ctx.arc(p.x, p.y, 40, 0, Math.PI*2);
     ctx.fillStyle = glow;
@@ -515,7 +515,7 @@ function drawRoadmap(progress, alpha) {
     // node circle
     ctx.beginPath();
     ctx.arc(p.x, p.y, 14, 0, Math.PI*2);
-    ctx.fillStyle = C.green;
+    ctx.fillStyle = C.gold;
     ctx.fill();
     ctx.strokeStyle = C.white;
     ctx.lineWidth = 2;
@@ -544,26 +544,26 @@ function drawCTA(alpha, t) {
   ctx.scale(pulse, pulse);
   ctx.translate(-W/2, -H*0.78);
 
-  // glow
-  const glow = ctx.createRadialGradient(W/2, H*0.78, 0, W/2, H*0.78, 200);
-  glow.addColorStop(0, 'rgba(0,255,136,0.18)');
-  glow.addColorStop(1, 'rgba(0,255,136,0.0)');
+  // subtle glow behind button (gold-tinted)
+  const glow = ctx.createRadialGradient(W/2, H*0.78, 0, W/2, H*0.78, 220);
+  glow.addColorStop(0, 'rgba(245,166,35,0.12)');
+  glow.addColorStop(1, 'rgba(245,166,35,0.0)');
   ctx.beginPath();
-  ctx.arc(W/2, H*0.78, 200, 0, Math.PI*2);
+  ctx.arc(W/2, H*0.78, 220, 0, Math.PI*2);
   ctx.fillStyle = glow;
   ctx.fill();
 
-  // button pill
+  // primary pill – white fill (matches QuipuCFO "Join Early Access" button)
   ctx.beginPath();
   ctx.roundRect(bx, by, bw, bh, 40);
-  ctx.fillStyle = C.green;
+  ctx.fillStyle = C.white;
   ctx.fill();
 
-  // text
-  ctx.font = 'bold 28px Inter, sans-serif';
+  // text – QuipuCFO vivid purple on white
+  ctx.font = 'bold 26px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#0a0a14';
+  ctx.fillStyle = C.bg;
   ctx.fillText('Get your Roadmap  →  Take the Finance AI Readiness Assessment', W/2, H*0.78);
 
   ctx.restore();
@@ -579,12 +579,12 @@ function drawStartBox(alpha, t) {
   ctx.save();
   ctx.globalAlpha = alpha;
 
-  // outer glow
-  ctx.shadowColor = C.green;
+  // outer glow – gold
+  ctx.shadowColor = C.gold;
   ctx.shadowBlur  = 40 * glow;
   ctx.beginPath();
   ctx.roundRect(bx, by, bw, bh, 10);
-  ctx.strokeStyle = C.green;
+  ctx.strokeStyle = C.gold;
   ctx.lineWidth = 3;
   ctx.stroke();
   ctx.shadowBlur = 0;
@@ -592,9 +592,9 @@ function drawStartBox(alpha, t) {
   ctx.font = 'bold 52px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.shadowColor = C.green;
+  ctx.shadowColor = C.gold;
   ctx.shadowBlur  = 20 * glow;
-  ctx.fillStyle = C.green;
+  ctx.fillStyle = C.gold;
   ctx.fillText('WHERE DO YOU START?', cx, cy);
 
   ctx.restore();
@@ -621,7 +621,7 @@ function drawGrid(alpha) {
 function drawVignette() {
   const g = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.85);
   g.addColorStop(0, 'rgba(0,0,0,0)');
-  g.addColorStop(1, 'rgba(10,6,30,0.7)');
+  g.addColorStop(1, 'rgba(25,5,65,0.65)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 }
@@ -646,7 +646,7 @@ function drawDust(t, masterAlpha) {
       ((d.y + d.vy*t*20) % H + H) % H,
       d.r, 0, Math.PI*2
     );
-    ctx.fillStyle = C.accent;
+    ctx.fillStyle = C.purple2;
     ctx.fill();
   });
   ctx.restore();
@@ -659,12 +659,15 @@ function render(time) {
   const T = clamp(time, 0, DURATION);
 
   // ── Background ────────────────────────────
+  // Background: QuipuCFO vivid purple (#6B21E8), shifts slightly warmer under urgency
   const urgencyMix = clamp((T - 3) / 4, 0, 1) * clamp((8-T)/2, 0, 1);
   const bg = ctx.createLinearGradient(0, 0, W, H);
-  const bgR = Math.floor(lerp(45, 70, urgencyMix));
-  const bgG = Math.floor(lerp(27, 15, urgencyMix));
-  bg.addColorStop(0, `rgb(${bgR},${bgG},105)`);
-  bg.addColorStop(1, `rgb(15,8,40)`);
+  // base: #6B21E8 = rgb(107,33,232) → slight warm shift under pressure
+  const bgR = Math.floor(lerp(107, 130, urgencyMix));
+  const bgG = Math.floor(lerp(33,  20, urgencyMix));
+  const bgB = Math.floor(lerp(232, 210, urgencyMix));
+  bg.addColorStop(0, `rgb(${bgR},${bgG},${bgB})`);
+  bg.addColorStop(1, `rgb(35,8,90)`);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
@@ -748,7 +751,7 @@ function render(time) {
   ctx.font = 'bold 26px Inter, sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'bottom';
-  ctx.fillStyle = C.accent;
+  ctx.fillStyle = C.gold;
   ctx.fillText('QuipuCFO', 36, H-30);
   ctx.restore();
 }
