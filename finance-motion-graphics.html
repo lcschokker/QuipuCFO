@@ -156,11 +156,10 @@ LABELS.forEach(l => {
 
 /* Roadmap nodes */
 const NODES = [
-  { label: 'Data Audit',        nx: 0.18, ny: 0.50 },
-  { label: 'AI Stack Mapping',  nx: 0.38, ny: 0.38 },
-  { label: 'Automation Layer',  nx: 0.58, ny: 0.50 },
-  { label: 'Scale & Optimize',  nx: 0.78, ny: 0.38 },
-  { label: 'Full AI Finance',   nx: 0.88, ny: 0.55 },
+  { label: 'Finance-Led AI Strategy',    nx: 0.18, ny: 0.52 },
+  { label: 'Use Case Selection & ROI',   nx: 0.40, ny: 0.40 },
+  { label: 'Organisational Readiness',   nx: 0.62, ny: 0.52 },
+  { label: 'Control-Led Orientation',    nx: 0.84, ny: 0.40 },
 ];
 
 /* ═══════════════════════════════════════════
@@ -522,11 +521,21 @@ function drawRoadmap(progress, alpha) {
     ctx.stroke();
 
     // label
-    ctx.font = 'bold 20px Inter, sans-serif';
+    ctx.font = 'bold 17px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = C.white;
-    ctx.fillText(NODES[i].label, p.x, p.y + 22);
+    // wrap long labels onto two lines (split at ' & ' or middle space)
+    const lbl = NODES[i].label;
+    const mid = lbl.indexOf(' & ') > 0 ? [lbl.slice(0, lbl.indexOf(' & ')+2), lbl.slice(lbl.indexOf(' & ')+3)]
+              : lbl.length > 22 ? [lbl.slice(0, lbl.lastIndexOf(' ', Math.floor(lbl.length/2)+6)), lbl.slice(lbl.lastIndexOf(' ', Math.floor(lbl.length/2)+6)+1)]
+              : null;
+    if (mid) {
+      ctx.fillText(mid[0], p.x, p.y + 22);
+      ctx.fillText(mid[1], p.x, p.y + 42);
+    } else {
+      ctx.fillText(lbl, p.x, p.y + 22);
+    }
   });
 
   ctx.restore();
@@ -536,7 +545,7 @@ function drawRoadmap(progress, alpha) {
 function drawCTA(alpha, t) {
   if (alpha <= 0) return;
   const pulse = 1 + 0.03*Math.sin(t*4);
-  const bw = 700, bh = 80, bx = W/2 - bw/2, by = H*0.78 - bh/2;
+  const bw = 500, bh = 80, bx = W/2 - bw/2, by = H*0.78 - bh/2;
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -564,7 +573,7 @@ function drawCTA(alpha, t) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = C.bg;
-  ctx.fillText('Get your Roadmap  →  Take the Finance AI Readiness Assessment', W/2, H*0.78);
+  ctx.fillText('Is Your AI Ready for Audit?', W/2, H*0.78);
 
   ctx.restore();
 }
@@ -573,7 +582,7 @@ function drawCTA(alpha, t) {
 function drawStartBox(alpha, t) {
   if (alpha <= 0) return;
   const glow = 0.7 + 0.3*Math.sin(t*2.5);
-  const bw = 620, bh = 110, cx = W/2, cy = H*0.46;
+  const bw = 620, bh = 110, cx = W/2, cy = H*0.20;
   const bx = cx - bw/2, by = cy - bh/2;
 
   ctx.save();
