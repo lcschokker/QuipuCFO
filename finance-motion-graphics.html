@@ -177,41 +177,157 @@ function drawCFO(cx, cy, scale, alpha) {
   ctx.translate(cx, cy);
   ctx.scale(scale, scale);
 
-  // body gradient
-  const bg = ctx.createRadialGradient(0, -60, 10, 0, 0, 160);
-  bg.addColorStop(0, 'rgba(180,140,255,0.9)');
-  bg.addColorStop(1, 'rgba(107,33,232,0.0)');
+  // ── Floor shadow
+  const shadowG = ctx.createRadialGradient(0, 138, 0, 0, 138, 85);
+  shadowG.addColorStop(0, 'rgba(0,0,0,0.22)');
+  shadowG.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.ellipse(0, 138, 72, 16, 0, 0, Math.PI*2);
+  ctx.fillStyle = shadowG; ctx.fill();
 
-  // head
-  ctx.beginPath();
-  ctx.arc(0, -115, 38, 0, Math.PI*2);
-  ctx.fillStyle = 'rgba(180,160,255,0.85)';
-  ctx.fill();
+  // ── Legs (dark navy trousers)
+  ctx.fillStyle = '#1a2240';
+  ctx.beginPath(); ctx.roundRect(-33, 78, 27, 78, 6); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(6, 78, 27, 78, 6); ctx.fill();
 
-  // torso
-  ctx.beginPath();
-  ctx.moveTo(-55, -75);
-  ctx.bezierCurveTo(-65, 0, -50, 80, -45, 120);
-  ctx.lineTo(45, 120);
-  ctx.bezierCurveTo(50, 80, 65, 0, 55, -75);
-  ctx.closePath();
-  ctx.fillStyle = bg;
-  ctx.fill();
+  // ── Shoes
+  ctx.fillStyle = '#141414';
+  ctx.beginPath(); ctx.ellipse(-20, 158, 22, 9, 0.1, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(20, 158, 22, 9, -0.1, 0, Math.PI*2); ctx.fill();
 
-  // left arm – slightly drooping under weight
+  // ── Body / suit jacket (dark navy)
+  ctx.fillStyle = '#1e2d5a';
   ctx.beginPath();
-  ctx.moveTo(-52, -50);
-  ctx.bezierCurveTo(-100, -20, -130, 40, -110, 80);
-  ctx.lineWidth = 22;
-  ctx.strokeStyle = 'rgba(160,140,230,0.75)';
+  ctx.moveTo(-55, -68);
+  ctx.bezierCurveTo(-63, 2, -50, 68, -44, 88);
+  ctx.lineTo(44, 88);
+  ctx.bezierCurveTo(50, 68, 63, 2, 55, -68);
+  ctx.closePath(); ctx.fill();
+
+  // ── White shirt (centre strip)
+  ctx.fillStyle = '#f2f2f8';
+  ctx.beginPath();
+  ctx.moveTo(-13, -66); ctx.lineTo(-7, 87); ctx.lineTo(7, 87); ctx.lineTo(13, -66);
+  ctx.closePath(); ctx.fill();
+
+  // ── Lapels
+  ctx.fillStyle = '#1e2d5a';
+  ctx.beginPath();
+  ctx.moveTo(-13, -66); ctx.lineTo(-36, -48); ctx.lineTo(-28, 12); ctx.lineTo(-8, -4);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(13, -66); ctx.lineTo(36, -48); ctx.lineTo(28, 12); ctx.lineTo(8, -4);
+  ctx.closePath(); ctx.fill();
+
+  // ── Tie (slightly loose – stressed)
+  ctx.fillStyle = '#b03030';
+  ctx.beginPath();
+  ctx.moveTo(-5, -63); ctx.lineTo(5, -63); ctx.lineTo(8, 18); ctx.lineTo(0, 29); ctx.lineTo(-8, 18);
+  ctx.closePath(); ctx.fill();
+  // tie knot
+  ctx.fillStyle = '#8c2020';
+  ctx.beginPath();
+  ctx.moveTo(-6, -65); ctx.lineTo(6, -65); ctx.lineTo(7, -53); ctx.lineTo(0, -46); ctx.lineTo(-7, -53);
+  ctx.closePath(); ctx.fill();
+
+  // ── Arms
   ctx.lineCap = 'round';
+  // left arm (raised slightly – stressed gesture)
+  ctx.strokeStyle = '#1e2d5a'; ctx.lineWidth = 26;
+  ctx.beginPath();
+  ctx.moveTo(-50, -52); ctx.bezierCurveTo(-92, -22, -108, 28, -92, 72);
   ctx.stroke();
-
   // right arm
   ctx.beginPath();
-  ctx.moveTo(52, -50);
-  ctx.bezierCurveTo(100, -20, 130, 40, 110, 80);
+  ctx.moveTo(50, -52); ctx.bezierCurveTo(92, -22, 108, 28, 92, 72);
   ctx.stroke();
+
+  // ── Cuffs + hands
+  const SKIN = '#f0c090';
+  const SKIN_D = '#d4956a';
+  ctx.fillStyle = '#f2f2f8';
+  ctx.beginPath(); ctx.ellipse(-93, 74, 15, 9, -0.3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(93, 74, 15, 9, 0.3, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = SKIN;
+  ctx.beginPath(); ctx.ellipse(-93, 80, 13, 11, -0.3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(93, 80, 13, 11, 0.3, 0, Math.PI*2); ctx.fill();
+
+  // ── Neck
+  ctx.fillStyle = SKIN;
+  ctx.beginPath(); ctx.roundRect(-13, -88, 26, 26, 4); ctx.fill();
+
+  // ── Head
+  ctx.fillStyle = SKIN;
+  ctx.beginPath(); ctx.ellipse(0, -128, 44, 50, 0, 0, Math.PI*2); ctx.fill();
+
+  // ── Ears
+  ctx.fillStyle = '#dda070';
+  ctx.beginPath(); ctx.ellipse(-44, -128, 9, 13, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(44, -128, 9, 13, 0, 0, Math.PI*2); ctx.fill();
+
+  // ── Hair (short, dark brown)
+  ctx.fillStyle = '#2c1a0e';
+  ctx.beginPath(); ctx.ellipse(0, -158, 40, 24, 0, 0, Math.PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-40, -140, 11, 20, -0.3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(40, -140, 11, 20, 0.3, 0, Math.PI*2); ctx.fill();
+
+  // ── Eyebrows (worried – inner ends raised)
+  ctx.strokeStyle = '#2c1a0e'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-28, -148); ctx.quadraticCurveTo(-18, -157, -9, -151); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(28, -148); ctx.quadraticCurveTo(18, -157, 9, -151); ctx.stroke();
+
+  // ── Eyes
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(-16, -130, 10, 8, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(16, -130, 10, 8, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#4a3220';
+  ctx.beginPath(); ctx.arc(-16, -130, 5.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(16, -130, 5.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(-16, -130, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(16, -130, 3, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-13, -133, 1.8, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(19, -133, 1.8, 0, Math.PI*2); ctx.fill();
+
+  // ── Nose
+  ctx.strokeStyle = SKIN_D; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -123); ctx.quadraticCurveTo(7, -116, 3, -111); ctx.stroke();
+
+  // ── Mouth (tight grimace – stressed)
+  ctx.strokeStyle = '#b07050'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-13, -104); ctx.quadraticCurveTo(0, -98, 13, -104); ctx.stroke();
+
+  ctx.restore();
+}
+
+/* ── "Meet James" name card ───────────────── */
+function drawNameCard(alpha) {
+  if (alpha <= 0) return;
+  const cx = W/2, cy = H*0.72;
+  const bw = 520, bh = 88, bx = cx - bw/2, by = cy - bh/2;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // card background
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 14);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // name
+  ctx.font = 'bold 30px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = C.gold;
+  ctx.fillText('Meet James', cx, cy - 18);
+
+  // title
+  ctx.font = '400 21px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.88)';
+  ctx.fillText("Financial \u201chindsight\u201d controller", cx, cy + 18);
 
   ctx.restore();
 }
@@ -521,18 +637,22 @@ function drawRoadmap(progress, alpha) {
     ctx.stroke();
 
     // label
-    ctx.font = 'bold 17px Inter, sans-serif';
+    ctx.font = 'bold 24px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = C.white;
-    // wrap long labels onto two lines (split at ' & ' or middle space)
+    // wrap long labels onto two lines (split at ' & ' or last space before midpoint)
     const lbl = NODES[i].label;
-    const mid = lbl.indexOf(' & ') > 0 ? [lbl.slice(0, lbl.indexOf(' & ')+2), lbl.slice(lbl.indexOf(' & ')+3)]
-              : lbl.length > 22 ? [lbl.slice(0, lbl.lastIndexOf(' ', Math.floor(lbl.length/2)+6)), lbl.slice(lbl.lastIndexOf(' ', Math.floor(lbl.length/2)+6)+1)]
-              : null;
+    const ampIdx = lbl.indexOf(' & ');
+    const mid = ampIdx > 0
+      ? [lbl.slice(0, ampIdx + 2), lbl.slice(ampIdx + 3)]
+      : lbl.length > 20
+        ? [lbl.slice(0, lbl.lastIndexOf(' ', Math.floor(lbl.length / 2) + 4)),
+           lbl.slice(lbl.lastIndexOf(' ', Math.floor(lbl.length / 2) + 4) + 1)]
+        : null;
     if (mid) {
       ctx.fillText(mid[0], p.x, p.y + 22);
-      ctx.fillText(mid[1], p.x, p.y + 42);
+      ctx.fillText(mid[1], p.x, p.y + 50);
     } else {
       ctx.fillText(lbl, p.x, p.y + 22);
     }
@@ -718,12 +838,14 @@ function render(time) {
     drawClock(W*0.14, H*0.25, 55, T, clockAlpha);
   }
 
-  // ── CFO SILHOUETTE ───────────────────────
+  // ── CFO CHARACTER "JAMES" ────────────────
   const cfoScale  = lerp(1.0, 0.65, solveAlpha);
   const cfoAlpha  = lerp(chaosAlpha > 0 ? 0.85 : 0, 0, clamp((T-9.5)/2, 0, 1));
-  const cfoY      = H*0.5 + Math.sin(T*0.4)*6;
+  const cfoY      = H*0.48 + Math.sin(T*0.4)*5;
+  const nameCardA = clamp((T-0.6)/0.8, 0, 1) * clamp((8-T)/0.8, 0, 1) * cfoAlpha;
   if (cfoAlpha > 0.02) {
     drawCFO(W/2, cfoY, cfoScale, cfoAlpha);
+    drawNameCard(nameCardA);
   }
 
   // ── SOLUTION ELEMENTS (SH02) ──────────────
