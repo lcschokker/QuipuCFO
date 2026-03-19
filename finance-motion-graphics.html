@@ -191,11 +191,6 @@ function drawCFO(cx, cy, scale, alpha) {
   ctx.beginPath(); ctx.ellipse(cx, cy + photoH * 0.18, photoW * 0.52, photoH * 0.07, 0, 0, Math.PI * 2);
   ctx.fillStyle = shadowG; ctx.fill();
 
-  // Draw photo clipped to rounded rect
-  const rx = 18 * scale;
-  ctx.beginPath();
-  ctx.roundRect(px, py, photoW, photoH, rx);
-  ctx.clip();
   ctx.drawImage(sandraImg, px, py, photoW, photoH);
 
   ctx.restore();
