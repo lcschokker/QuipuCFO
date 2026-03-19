@@ -958,8 +958,10 @@ function loop(ts) {
   if (t < DURATION) {
     rafId = requestAnimationFrame(loop);
   } else {
-    playing = false;
-    document.getElementById('btnPlay').textContent = '▶ Play';
+    // loop back to start automatically
+    t = 0;
+    lastTS = null;
+    rafId = requestAnimationFrame(loop);
   }
 }
 
@@ -989,11 +991,12 @@ btnPlay.addEventListener('click', () => {
 });
 
 btnRestart.addEventListener('click', () => {
-  playing = false;
-  lastTS  = null;
   t = 0;
-  btnPlay.textContent = '▶ Play';
-  render(0.5);
+  lastTS = null;
+  playing = true;
+  btnPlay.textContent = '⏸ Pause';
+  cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(loop);
   updateControls();
 });
 
@@ -1003,8 +1006,10 @@ timeline.addEventListener('input', () => {
   render(t);
 });
 
-// Initial frame – render at 0.5s so Sandra and elements are visible on load
-render(0.5);
+// Auto-play on load
+playing = true;
+btnPlay.textContent = '⏸ Pause';
+rafId = requestAnimationFrame(loop);
 </script>
 </body>
 </html>
