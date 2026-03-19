@@ -357,17 +357,20 @@ function drawNameCard(alpha) {
   ctx.globalAlpha = alpha;
 
   // ── tagline above the card
-  ctx.font = 'italic 400 22px Inter, sans-serif';
+  ctx.font = 'italic 700 24px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(255,255,255,0.70)';
-  ctx.fillText('When the month-end close takes 3 weeks\u2026', cx, cy - bh/2 - 22);
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('When the month-end close takes 3 weeks\u2026', cx, cy - bh/2 - 24);
+  ctx.shadowBlur = 0;
 
-  // card background
+  // card background – more opaque for contrast
   ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 14);
-  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillStyle = 'rgba(0,0,0,0.40)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.strokeStyle = C.gold;
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
@@ -375,13 +378,16 @@ function drawNameCard(alpha) {
   ctx.font = 'bold 30px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 6;
   ctx.fillStyle = C.gold;
   ctx.fillText('Meet Sandra, 43', cx, cy - 18);
 
   // job title
-  ctx.font = '400 21px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.88)';
+  ctx.font = '600 22px Inter, sans-serif';
+  ctx.fillStyle = '#ffffff';
   ctx.fillText('VP of Eternal Close', cx, cy + 18);
+  ctx.shadowBlur = 0;
 
   ctx.restore();
 }
