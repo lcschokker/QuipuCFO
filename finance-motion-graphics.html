@@ -366,24 +366,24 @@ function drawNameCard(alpha) {
   ctx.fillText('When the month-end close takes 3 weeks\u2026', cx, cy - bh/2 - 24);
   ctx.shadowBlur = 0;
 
-  // card background – more opaque for contrast
+  // card background – solid dark pill for contrast
   ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 14);
-  ctx.fillStyle = 'rgba(0,0,0,0.40)';
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
   ctx.fill();
-  ctx.strokeStyle = C.gold;
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // name + age
+  // name + age – full white
   ctx.font = 'bold 30px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
   ctx.shadowBlur = 6;
-  ctx.fillStyle = C.gold;
+  ctx.fillStyle = '#ffffff';
   ctx.fillText('Meet Sandra, 43', cx, cy - 18);
 
-  // job title
+  // job title – full white
   ctx.font = '600 22px Inter, sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.fillText('VP of Eternal Close', cx, cy + 18);
