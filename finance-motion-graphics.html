@@ -893,13 +893,14 @@ function render(time) {
   }
 
   // ── CFO CHARACTER "SANDRA" ───────────────
+  // cfoAlpha is independent of chaosAlpha so Sandra is visible from the first frame
   const cfoScale  = lerp(1.0, 0.65, solveAlpha);
-  const cfoAlpha  = lerp(chaosAlpha > 0 ? 0.85 : 0, 0, clamp((T-9.5)/2, 0, 1));
+  const cfoAlpha  = clamp(T / 0.5, 0, 1) * clamp((9 - T) / 1.0, 0, 1);
   const cfoY      = H*0.48 + Math.sin(T*0.4)*5;
-  const nameCardA = clamp((T-0.6)/0.8, 0, 1) * clamp((8-T)/0.8, 0, 1) * cfoAlpha;
+  const nameCardA = clamp((T - 0.3) / 0.6, 0, 1) * clamp((8 - T) / 0.8, 0, 1);
   if (cfoAlpha > 0.02) {
     drawCFO(W/2, cfoY, cfoScale, cfoAlpha);
-    drawNameCard(nameCardA);
+    drawNameCard(nameCardA * cfoAlpha);
   }
 
   // ── SOLUTION ELEMENTS (SH02) ──────────────
@@ -992,7 +993,7 @@ btnRestart.addEventListener('click', () => {
   lastTS  = null;
   t = 0;
   btnPlay.textContent = '▶ Play';
-  render(0);
+  render(0.5);
   updateControls();
 });
 
@@ -1002,8 +1003,8 @@ timeline.addEventListener('input', () => {
   render(t);
 });
 
-// Initial frame
-render(0);
+// Initial frame – render at 0.5s so Sandra and elements are visible on load
+render(0.5);
 </script>
 </body>
 </html>
